@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>r/place</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2; /* Light mode background color */
+            color: #333; /* Text color */
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        /* Canvas styles */
+        #canvas {
+            border: 1px solid #ccc;
+            background-color: #fff; /* Canvas background color */
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #333; /* Dark mode background color */
+            color: #fff; /* Text color */
+        }
+
+        body.dark-mode #canvas {
+            border-color: #666;
+            background-color: #444; /* Canvas background color in dark mode */
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <canvas id="canvas" width="1000" height="1000"></canvas>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const cellSize = 10;
+
+    // Function to open color picker window
+    function openColorPicker(event) {
+        const colorPicker = document.createElement('input');
+        colorPicker.type = 'color';
+        colorPicker.addEventListener('change', (e) => {
+            const color = e.target.value;
+            placePixel(event, color);
+            colorPicker.remove();
+        });
+        document.body.appendChild(colorPicker); // Append color picker to body
+        colorPicker.click();
+    }
+
+    // Function to place pixel on canvas
+    function placePixel(event, color) {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor((event.clientX - rect.left) / cellSize);
+        const y = Math.floor((event.clientY - rect.top) / cellSize);
+        ctx.fillStyle = color;
+        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        socket.emit('placePixel', { x, y, color });
+    }
+
+    // Listen for canvas updates from the server
+    socket.on('updateCanvas', ({ x, y, color }) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+    });
+
+    // Listen for initial canvas data from the server
+    socket.on('canvasData', (data) => {
+        data.forEach((row, y) => {
+            row.forEach((color, x) => {
+                ctx.fillStyle = color;
+                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            });
+        });
+    });
+
+    // Handle mouse click events on the canvas
+    canvas.addEventListener('click', (event) => {
+        openColorPicker(event);
+    });
+</script>
+</body>
+</html>
+
+
