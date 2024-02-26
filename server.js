@@ -48,4 +48,5 @@ function isValidColor(color) {
 // Start the server
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`http://localhost:3000/${PORT}`);
 });
